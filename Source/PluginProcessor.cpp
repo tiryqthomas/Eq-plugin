@@ -36,7 +36,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout eq::createLayout()
 
     layout.add (std::make_unique<AudioParameterFloat> (ParameterID { "output", 1 }, "Output",
                                                        NormalisableRange<float> (-24.0f, 24.0f, 0.01f), 0.0f,
-                                                       AudioParameterFloatAttributes().withLabel ("dB")));
+                                                       AudioParameterFloatAttributes().withLabel ("dB").withStringFromValueFunction (
+                                                           [] (float v, int) { return (v > 0 ? "+" : "") + String (v, 1) + " dB"; })));
     return layout;
 }
 
@@ -151,6 +152,14 @@ void EqProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuff
     else
     {
         buffer.applyGain (outputGainSmoothed.getTargetValue());
+    }
+
+    for (int ch = 0; ch < numCh; ++ch)
+    {
+        const float peak = buffer.getMagnitude (ch, 0, buffer.getNumSamples());
+        auto& slot = outputPeak[(size_t) ch];
+        if (peak > slot.load())
+            slot.store (peak);
     }
 
     analyzerFifo.push (buffer, numCh);

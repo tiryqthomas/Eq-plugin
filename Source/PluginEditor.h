@@ -4,37 +4,55 @@
 #include "PluginProcessor.h"
 #include "EqCurveView.h"
 
-// Simple look: rotary knobs drawn as a thin arc with a dot.
+// Knobs: dark body, gold value arc, white pointer. Sliders tagged "valueText" draw as
+// a draggable text value instead (used for Output in the status bar).
 class EqLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
     EqLookAndFeel();
     void drawRotarySlider (juce::Graphics&, int x, int y, int w, int h, float pos,
                            float startAngle, float endAngle, juce::Slider&) override;
+    void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour&, bool, bool) override;
+    void drawButtonText (juce::Graphics&, juce::TextButton&, bool, bool) override;
 };
 
-// Bottom bar showing the selected band's controls.
-class BandBar : public juce::Component
+// Round power toggle drawn as a glyph.
+class PowerButton : public juce::ToggleButton
 {
 public:
-    explicit BandBar (EqProcessor&);
+    void paintButton (juce::Graphics&, bool highlighted, bool down) override;
+};
+
+// Floating panel for the selected band.
+class BandPanel : public juce::Component
+{
+public:
+    explicit BandPanel (EqProcessor&);
     void setBand (int band);
+    int getBand() const { return band; }
     void paint (juce::Graphics&) override;
     void resized() override;
+
+    std::function<void (int)> onBandChange;   // band arrows clicked
+    std::function<void (bool)> onKnobDrag;     // a knob drag started / ended
 
 private:
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 
+    void stepBand (int direction);
+
     EqProcessor& processor;
     int band = 0;
 
-    juce::ToggleButton onButton { "On" };
-    juce::Slider freq, gain, q, output;
-    juce::Label freqLabel, gainLabel, qLabel, outputLabel, bandLabel;
+    PowerButton power;
+    juce::Slider freq, gain, q;
+    juce::Label freqLabel, gainLabel, qLabel;
+    juce::TextButton prevBand { "<" }, nextBand { ">" };
+    juce::Rectangle<int> typePill, stereoPill, bandNumberArea;
 
-    std::unique_ptr<SliderAttachment> freqAtt, gainAtt, qAtt, outputAtt;
-    std::unique_ptr<ButtonAttachment> onAtt;
+    std::unique_ptr<SliderAttachment> freqAtt, gainAtt, qAtt;
+    std::unique_ptr<ButtonAttachment> powerAtt;
 };
 
 class EqEditor : public juce::AudioProcessorEditor
@@ -47,9 +65,14 @@ public:
     void resized() override;
 
 private:
+    static constexpr int kHeaderH = 36, kStatusH = 26;
+
+    EqProcessor& processor;
     EqLookAndFeel lookAndFeel;
     EqCurveView curveView;
-    BandBar bandBar;
+    BandPanel bandPanel;
+    juce::Slider output;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> outputAtt;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EqEditor)
 };

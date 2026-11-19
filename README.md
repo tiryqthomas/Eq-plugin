@@ -7,7 +7,8 @@ A parametric EQ plugin (AU + VST3) for macOS on Apple Silicon, built with [JUCE]
 - 4 bell bands on by default, out of 10 band slots
 - A live spectrum of the output
 - A summed EQ curve with draggable band nodes
-- A bottom bar with Freq, Gain and Q for the selected band, plus Output gain
+- A floating band panel with Freq, Gain and Q knobs, a value tooltip on nodes, output meters, and Output gain in the status bar
+- Click the "12 dB" chip to switch the display range (6, 12 or 24 dB)
 
 ## Controls
 

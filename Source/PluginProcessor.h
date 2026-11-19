@@ -37,6 +37,7 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
     SpectrumFifo analyzerFifo;
+    std::array<std::atomic<float>, 2> outputPeak { 0.0f, 0.0f }; // read and reset by the UI meters
 
     struct BandParams
     {
